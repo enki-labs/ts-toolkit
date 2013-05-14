@@ -20,13 +20,14 @@ var runNext = function (zc, that)
         argtest["validTo"] = (Date.parse(argtest["validTo"], 'yyyy-MM-dd') / 1000); 
         argtest["allow"] = argtest["allow"].split('\r\n');
         argtest["remove"] = argtest["remove"].split('\r\n');
-        argtest["filter"] = argtest["filters"].split('\r\n');    
+        argtest["filter"] = argtest["filters"].split('\r\n');
         argtest["volFollows"] = false;
 
-        var process = proc.spawn('/usr/bin/python', ['/home/wayne/src/prologue/build/import.py', JSON.stringify(argtest)]);
+        var parseProcess = require('path').resolve(__dirname, 'parse.py')
+        var process = proc.spawn('/usr/bin/python', [parseProcess, JSON.stringify(argtest)]);
         process.stdout.on('data', function (data) { var buff = new Buffer(data); });
         process.stderr.on('data', function (data) { var buff = new Buffer(data); });
-        process.stdout.on('end', function (data) { zc.releaseTask(task, false, function() { getNext(zc, that)(); });
+        process.stdout.on('end', function (data) { zc.releaseTask(task, false, function() { getNext(zc, that)(); }); });
         process.stderr.on('end', function (data) {});
         process.stdout.on('exit', function (code) { if (code != 0) { console.log('FAIL!'); } });        
     };
