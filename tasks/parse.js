@@ -46,6 +46,6 @@ var getNext = function (zc, that)
 };
 
 var zc = new Zoot('http://omnius01:7474', 'omnius01', 6379);
-getNext(z, that)();
+getNext(zc, that)();
 
 
