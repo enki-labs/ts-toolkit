@@ -11,7 +11,6 @@ var runNext = function (zc, that)
 {
     return function (taskInfo)
     {
-        console.log(taskInfo);
         taskRunning = true;
         var argtest = taskInfo.childData;
         argtest.output = taskInfo.child.key;
@@ -24,9 +23,10 @@ var runNext = function (zc, that)
         argtest["volFollows"] = false;
 
         var parseProcess = require('path').resolve(__dirname, 'parse.py')
+        console.log(JSON.stringify(argtest));
         var process = proc.spawn('/usr/bin/python', [parseProcess, JSON.stringify(argtest)]);
-        process.stdout.on('data', function (data) { var buff = new Buffer(data); });
-        process.stderr.on('data', function (data) { var buff = new Buffer(data); });
+        process.stdout.on('data', function (data) { var buff = new Buffer(data); console.log(buff.toString('utf8')); });
+        process.stderr.on('data', function (data) { var buff = new Buffer(data); console.log(buff.toString('utf8')); });
         process.stdout.on('end', function (data) { zc.releaseTask(taskInfo, true, function() { getNext(zc, that)(); }); });
         process.stderr.on('end', function (data) {});
         process.stdout.on('exit', function (code) { if (code != 0) { console.log('FAIL!'); } });        
