@@ -1,0 +1,376 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:og="http://opengraphprotocol.org/schema/" xmlns:fb="http://www.facebook.com/2008/fbml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <title>Live News Events & Coverage - Bloomberg</title>
+    <link rel="canonical" href="http://www.bloomberg.com/live-stream/"/>
+    <link href="http://cdn.gotraffic.net/v/20130530_140334/stylesheets/media_base.css" media="screen" rel="stylesheet" type="text/css" />
+    <link href="http://cdn.gotraffic.net/v/20130530_140334/stylesheets/tv_video.css" media="screen" rel="stylesheet" type="text/css" />
+    <script src="http://cdn.gotraffic.net/v/20130530_140334/javascripts/main_f-min-v2-jq1.7.2.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        //<![CDATA[
+        //For omniture
+        Description = "blp.video/live2/live-stream";
+        // Setup for surround session
+        var adid="";
+        var surroundTagVal = "";
+        var surroundTag=BLOOMBERG.util.Cookie.get("surroundId"); // Get surround session id from the cookie
+        if(surroundTag == "undefined" || surroundTag == null || surroundTag == ""){ // check if there was a surround session id in the cookie
+            surroundTag="";
+        }else{
+            surroundTagVal="srnd="+surroundTag+";"; // finish setting up the key-value for the ad tags
+        }
+
+        if (typeof surroundTagVal == "undefined" || surroundTagVal == "null") surroundTagVal = "";
+
+        //Market status
+        if (typeof gblvlty == "undefined"){ var gblvlty = 0; }
+        market_status_val = "status=marketstatus" + gblvlty;
+        HCat = "";
+
+        //Setting topic value for topic pages(Lingospot)
+        var topic_referrer = BLOOMBERG.referrer.topic_referrer();
+        if(topic_referrer != null && topic_referrer != ""){
+            topic_refer_key = "topic=" + topic_referrer + ";";
+            topic_refer_name = "blp.news/topic/" + topic_referrer;
+        }else{
+            topic_refer_key = "";
+            topic_refer_name = "blp.news/topic;";
+        }
+
+        sponsor_key = "";
+        var sponsor = BLOOMBERG.referrer.sponsor_referrer();
+        if(sponsor != null && sponsor != ""){
+            sponsor_key = "sponsor=" + sponsor + ";";
+        }
+        var ticker_key = ''
+        
+
+        //Page URL to pass url to ad call
+        var page_url = window.location.pathname;
+        //Getting sumdomain for test site
+        var host_name_list = window.location.hostname.split('.');
+        var sub_domain_name= host_name_list[0];
+
+        HCat = HCat + topic_refer_key + sponsor_key + ticker_key; //Value to be passed to the ad call
+        var no_dfp_interstitial = "false",
+            bbg_show_int = false;
+                            //]]>
+    </script>
+    <script type="text/javascript">
+              //<![CDATA[
+            function receiveOoyalaEvent(playerId, eventName, p){
+                if (eventName === 'companionAdsReady'){
+                    BLOOMBERG.ads.parse_display_companion_ads(p.companionAds, 'blp.video', 'live2/live-stream');
+                }
+            }
+            function populate_now_later(){
+                $.ajax({
+                    type: "GET",
+                    url: "/tv/get_current_next_schedule/live_event/",
+                    success: function(data){
+                            $("#live_tv_top .second").html(data['current_program']);
+                            $("#live_tv_bottom .second").html(data['next_program']);
+                    },
+                    error: function(){
+                        //alert("Error");
+                    },
+                    complete: function(){
+                        setTimeout(populate_now_later, 5*60*1000);
+                    }
+                });
+            }
+            setTimeout(populate_now_later, 5*60*1000);
+        //]]>
+    </script>
+    <style type="text/css">
+        div.headbar {background-color:white}
+    </style>
+</head>
+<body class="tv media">
+    <script type="text/javascript">
+        BLOOMBERG.register_ext_nav_events();
+    </script>
+
+    <table><tr><td>
+
+    <div id="live_tv_container">
+        <div class="headbar">LIVE EVENT</div>
+        <div class="component filtered_index live_event" id="bloomberg_tv_live">
+            <div id="ooyala_mediaplayer" class="">
+                <div id="ooyala_live_tv_container"></div>
+                <script type="text/javascript">
+                    //<![CDATA[
+                    var live_embed_code = 'd4djdlNTp9RsC5puRTQdXZanlGOm0d8Q';
+                    var bgadurl = 'http://ad.doubleclick.net/pfadx/blp.video/live2/live-stream;sz=1x1;tile=1;tp_video=null;dcmt=text/html;@expar@ord=',
+                        topic_referrer = '',
+                        ad_site = '/blp.video/',
+                        ad_test_param = '',
+                        disable_ad_site_test = BLOOMBERG.global_var.disable_tv_ad_site_test;
+                    if (disable_ad_site_test == false){
+                        try {
+                            ad_test_param = BLOOMBERG.util.URL(window.location.href).getParameter("ad_site");
+                            if(typeof(ad_test_param) != "undefined" && ad_test_param == "blp.video_test"){
+                                bgadurl = bgadurl.replace(ad_site, '/'+ad_test_param+'/');
+                            }
+                        } catch(err) { // don't replace test url
+                        }
+                    }   
+                    try {
+                        topic_referrer = BLOOMBERG.referrer.topic_referrer();
+                        if(topic_referrer != null && topic_referrer != ""){
+                            topic_referrer = 'topic=' + topic_referrer + ';';
+                        }   
+                    } catch(err) { // no topic
+                    }
+                    bgadurl = bgadurl.replace('@expar@', topic_referrer);
+        
+                    function bloombergPlayerCallBackInternal(playerId, eventName, eventArguments){
+                        if (eventName == "popOutButtonClicked"){
+                            var player= document.getElementById(playerId);
+                            var startTime = eventArguments.data;
+                            player.pauseMovie();
+                            window.open("/live-stream/popout/" + startTime + "/", null, "width=640, height=360, status=0, toolbar=0, scrollbars=0, location=0, resizable=1");
+                        }
+                        if (typeof(receiveOoyalaEvent) === 'function' && bloombergPlayerCallBackInternal != receiveOoyalaEvent){
+                            BLOOMBERG.video_tracking.track_ooyala_playing(eventName, eventArguments, playerId);
+                            receiveOoyalaEvent(playerId, eventName, eventArguments);
+                        }
+                    }
+                    var ooyala_bg_script = "http://player.ooyala.com/player.js?hide=all&wmode=transparent&thruParam_bloomberg-ui[popOutButtonVisible]=TRUE&playerBrandingId=8a7a9c84ac2f4e8398ebe50c07eb2f9d&playerContainerId=ooyala_live_tv_container&playerId=ooyala_live_tv&autoplay=1@width@@height@&callback=bloombergPlayerCallBackInternal&thruParam_conviva-other[customerId]=c3.Bloomberg&thruParam_conviva-other[serviceUrl]=http%3A%2F%2Flivepass.conviva.com&thruParam_conviva-other[otherTags]=Source|BBweb;Zone|live-stream;cPlay|@cPlayTkn@&thruParam_bloomberg-ui[endScreenType]=countdown&thruParam_bloomberg-ui[countdown]=5&embedCode=" + live_embed_code +  '&thruParam_vast-live-ads-manager[pre-roll]=' + bgadurl + BLOOMBERG.global_var.random_num + "";
+                    var csc_val = BLOOMBERG.util.Cookie.get('comScore');
+                    if(csc_val.indexOf('countdownComplete') != -1){
+                        ooyala_bg_script = ooyala_bg_script.replace('@cPlayTkn@', 'yes');
+                    }else{
+                        ooyala_bg_script = ooyala_bg_script.replace('@cPlayTkn@', 'no');
+                    }
+                    if(window.location.hash==="#playlist"){
+                        ooyala_bg_script = ooyala_bg_script.replace('@width@', '&width=860').replace('@height@', '&height=484');
+                    } else{
+                        ooyala_bg_script = ooyala_bg_script.replace('@width@', '&width=640').replace('@height@', '&height=360');
+                    }
+                    // default is to not lazy load
+                    var ooyala_lazy_load = false;
+                    if (BLOOMBERG.lead_video.is_iphone_ipad_user()) ooyala_lazy_load = false;
+                    if (!ooyala_lazy_load) document.write('<scr' + 'ipt src="' + ooyala_bg_script + '"></scr' + 'ipt>');
+                    //]]>
+                </script>
+                <noscript><p>You need to enable Javascript to play media on Bloomberg.com</p></noscript>
+            </div>
+        </div>
+        <div id="ooyala_mediaplayer" class="">
+            <div class="headbar">ASIA</div>
+            <div id="ooyala_live_tv_container_asia"></div>
+                <script type="text/javascript">
+                  //<![CDATA[
+                        var live_embed_code = 'w4dTdlNToKUvtqJ1WMDu5IuNP9as1iF0';
+
+                  
+                    var bgadurl = 'http://ad.doubleclick.net/pfadx/blp.video/live2;sz=1x1;tile=1;tp_video=null;dcmt=text/html;@expar@ord=',
+                        topic_referrer = '',
+                        ad_site = '/blp.video/',
+                        ad_test_param = '',
+                        disable_ad_site_test = BLOOMBERG.global_var.disable_tv_ad_site_test;
+                    if (disable_ad_site_test == false){
+                        try {
+                            ad_test_param = BLOOMBERG.util.URL(window.location.href).getParameter("ad_site");
+                            if(typeof(ad_test_param) != "undefined" && ad_test_param == "blp.video_test"){
+                                bgadurl = bgadurl.replace(ad_site, '/'+ad_test_param+'/');
+                            }
+                        } catch(err) { // don't replace test url
+                        }
+                    }
+                    try {
+                        topic_referrer = BLOOMBERG.referrer.topic_referrer();
+                        if(topic_referrer != null && topic_referrer != ""){
+                            topic_referrer = 'topic=' + topic_referrer + ';';
+                        }
+                    } catch(err) { // no topic
+                    }
+                    bgadurl = bgadurl.replace('@expar@', topic_referrer);
+                
+                function bloombergPlayerCallBackInternal(playerId, eventName, eventArguments){
+                                if (eventName == "popOutButtonClicked"){
+                        var player= document.getElementById(playerId);
+                        var startTime = eventArguments.data;
+                        player.pauseMovie();
+                        window.open("/tv/asia/popout/" + startTime + "/", null, "width=640, height=360, status=0, toolbar=0, scrollbars=0, location=0, resizable=1");
+                    }
+                                                if (typeof(receiveOoyalaEvent) === 'function' && bloombergPlayerCallBackInternal != receiveOoyalaEvent){
+                            BLOOMBERG.video_tracking.track_ooyala_playing(eventName, eventArguments, playerId);
+                            receiveOoyalaEvent(playerId, eventName, eventArguments);
+                        }
+                            }
+                var ooyala_bg_script = "http://player.ooyala.com/player.js?hide=all&wmode=transparent&thruParam_bloomberg-ui[popOutButtonVisible]=TRUE&playerBrandingId=8a7a9c84ac2f4e8398ebe50c07eb2f9d&playerContainerId=ooyala_live_tv_container_asia&playerId=ooyala_live_tv_asia&autoplay=1@width@@height@&callback=bloombergPlayerCallBackInternal&thruParam_conviva-other[customerId]=c3.Bloomberg&thruParam_conviva-other[serviceUrl]=http%3A%2F%2Flivepass.conviva.com&thruParam_conviva-other[otherTags]=Source|BBweb;Zone|tv;cPlay|@cPlayTkn@&thruParam_bloomberg-ui[endScreenType]=countdown&thruParam_bloomberg-ui[countdown]=5&embedCode=" + live_embed_code +  '&thruParam_vast-live-ads-manager[pre-roll]=' + bgadurl + BLOOMBERG.global_var.random_num + "";
+                var csc_val = BLOOMBERG.util.Cookie.get('comScore');
+                if(csc_val.indexOf('countdownComplete') != -1){
+                    ooyala_bg_script = ooyala_bg_script.replace('@cPlayTkn@', 'yes');
+                }else{
+                    ooyala_bg_script = ooyala_bg_script.replace('@cPlayTkn@', 'no');
+                }
+                if(window.location.hash==="#playlist"){
+                    ooyala_bg_script = ooyala_bg_script.replace('@width@', '&width=860').replace('@height@', '&height=484');
+                } else{
+                    ooyala_bg_script = ooyala_bg_script.replace('@width@', '&width=640').replace('@height@', '&height=360');
+                }
+                // default is to not lazy load
+                var ooyala_lazy_load = false;
+                if (BLOOMBERG.lead_video.is_iphone_ipad_user()) ooyala_lazy_load = false;
+                if (!ooyala_lazy_load) document.write('<scr' + 'ipt src="' + ooyala_bg_script + '"></scr' + 'ipt>');
+                      //]]>
+              </script>
+              <noscript><p>You need to enable Javascript to play media on Bloomberg.com</p></noscript>
+            </div>
+        </div>
+        </td>
+        <td>
+            <div id="ooyala_mediaplayer" class="">
+              <div class="headbar">EUROPE</div>
+              <div id="ooyala_live_tv_container_europe"></div>
+                    <script type="text/javascript">
+                      //<![CDATA[
+                            var live_embed_code = 'x0dDdlNTrs64I5H-29bfEFu4qeIira5r';
+
+                      
+                        var bgadurl = 'http://ad.doubleclick.net/pfadx/blp.video/live2;sz=1x1;tile=1;tp_video=null;dcmt=text/html;@expar@ord=',
+                            topic_referrer = '',
+                            ad_site = '/blp.video/',
+                            ad_test_param = '',
+                            disable_ad_site_test = BLOOMBERG.global_var.disable_tv_ad_site_test;
+                        if (disable_ad_site_test == false){
+                            try {
+                                ad_test_param = BLOOMBERG.util.URL(window.location.href).getParameter("ad_site");
+                                if(typeof(ad_test_param) != "undefined" && ad_test_param == "blp.video_test"){
+                                    bgadurl = bgadurl.replace(ad_site, '/'+ad_test_param+'/');
+                                }
+                            } catch(err) { // don't replace test url
+                            }
+                        }
+                        try {
+                            topic_referrer = BLOOMBERG.referrer.topic_referrer();
+                            if(topic_referrer != null && topic_referrer != ""){
+                                topic_referrer = 'topic=' + topic_referrer + ';';
+                            }
+                        } catch(err) { // no topic
+                        }
+                        bgadurl = bgadurl.replace('@expar@', topic_referrer);
+                    
+                    function bloombergPlayerCallBackInternal(playerId, eventName, eventArguments){
+                                    if (eventName == "popOutButtonClicked"){
+                            var player= document.getElementById(playerId);
+                            var startTime = eventArguments.data;
+                            player.pauseMovie();
+                            window.open("/tv/europe/popout/" + startTime + "/", null, "width=640, height=360, status=0, toolbar=0, scrollbars=0, location=0, resizable=1");
+                        }
+                                                    if (typeof(receiveOoyalaEvent) === 'function' && bloombergPlayerCallBackInternal != receiveOoyalaEvent){
+                                BLOOMBERG.video_tracking.track_ooyala_playing(eventName, eventArguments, playerId);
+                                receiveOoyalaEvent(playerId, eventName, eventArguments);
+                            }
+                                }
+                    var ooyala_bg_script = "http://player.ooyala.com/player.js?hide=all&wmode=transparent&thruParam_bloomberg-ui[popOutButtonVisible]=TRUE&playerBrandingId=8a7a9c84ac2f4e8398ebe50c07eb2f9d&playerContainerId=ooyala_live_tv_container_europe&playerId=ooyala_live_tv_europe&autoplay=1@width@@height@&callback=bloombergPlayerCallBackInternal&thruParam_conviva-other[customerId]=c3.Bloomberg&thruParam_conviva-other[serviceUrl]=http%3A%2F%2Flivepass.conviva.com&thruParam_conviva-other[otherTags]=Source|BBweb;Zone|tv;cPlay|@cPlayTkn@&thruParam_bloomberg-ui[endScreenType]=countdown&thruParam_bloomberg-ui[countdown]=5&embedCode=" + live_embed_code +  '&thruParam_vast-live-ads-manager[pre-roll]=' + bgadurl + BLOOMBERG.global_var.random_num + "";
+                    var csc_val = BLOOMBERG.util.Cookie.get('comScore');
+                    if(csc_val.indexOf('countdownComplete') != -1){
+                        ooyala_bg_script = ooyala_bg_script.replace('@cPlayTkn@', 'yes');
+                    }else{
+                        ooyala_bg_script = ooyala_bg_script.replace('@cPlayTkn@', 'no');
+                    }
+                    if(window.location.hash==="#playlist"){
+                        ooyala_bg_script = ooyala_bg_script.replace('@width@', '&width=860').replace('@height@', '&height=484');
+                    } else{
+                        ooyala_bg_script = ooyala_bg_script.replace('@width@', '&width=640').replace('@height@', '&height=360');
+                    }
+                    // default is to not lazy load
+                    var ooyala_lazy_load = false;
+                    if (BLOOMBERG.lead_video.is_iphone_ipad_user()) ooyala_lazy_load = false;
+                    if (!ooyala_lazy_load) document.write('<scr' + 'ipt src="' + ooyala_bg_script + '"></scr' + 'ipt>');
+                          //]]>
+                  </script>
+                  <noscript><p>You need to enable Javascript to play media on Bloomberg.com</p></noscript>
+              </div>
+            </div>
+            <div id="ooyala_mediaplayer" class="">
+              <div class="headbar">US</div>
+              <div id="ooyala_live_tv_container_us"></div>
+                    <script type="text/javascript">
+                      //<![CDATA[
+                            var live_embed_code = 'BnazlkNDpCIcD-QkfyZCQKlRiiFnVa5I';
+
+                      
+                        var bgadurl = 'http://ad.doubleclick.net/pfadx/blp.video/live2;sz=1x1;tile=1;tp_video=null;dcmt=text/html;@expar@ord=',
+                            topic_referrer = '',
+                            ad_site = '/blp.video/',
+                            ad_test_param = '',
+                            disable_ad_site_test = BLOOMBERG.global_var.disable_tv_ad_site_test;
+                        if (disable_ad_site_test == false){
+                            try {
+                                ad_test_param = BLOOMBERG.util.URL(window.location.href).getParameter("ad_site");
+                                if(typeof(ad_test_param) != "undefined" && ad_test_param == "blp.video_test"){
+                                    bgadurl = bgadurl.replace(ad_site, '/'+ad_test_param+'/');
+                                }
+                            } catch(err) { // don't replace test url
+                            }
+                        }
+                        try {
+                            topic_referrer = BLOOMBERG.referrer.topic_referrer();
+                            if(topic_referrer != null && topic_referrer != ""){
+                                topic_referrer = 'topic=' + topic_referrer + ';';
+                            }
+                        } catch(err) { // no topic
+                        }
+                        bgadurl = bgadurl.replace('@expar@', topic_referrer);
+                    
+                    function bloombergPlayerCallBackInternal(playerId, eventName, eventArguments){
+                                    if (eventName == "popOutButtonClicked"){
+                            var player= document.getElementById(playerId);
+                            var startTime = eventArguments.data;
+                            player.pauseMovie();
+                            window.open("/tv/popout/" + startTime + "/", null, "width=640, height=360, status=0, toolbar=0, scrollbars=0, location=0, resizable=1");
+                        }
+                                                    if (typeof(receiveOoyalaEvent) === 'function' && bloombergPlayerCallBackInternal != receiveOoyalaEvent){
+                                BLOOMBERG.video_tracking.track_ooyala_playing(eventName, eventArguments, playerId);
+                                receiveOoyalaEvent(playerId, eventName, eventArguments);
+                            }
+                                }
+                    var ooyala_bg_script = "http://player.ooyala.com/player.js?hide=all&wmode=transparent&thruParam_bloomberg-ui[popOutButtonVisible]=TRUE&playerBrandingId=8a7a9c84ac2f4e8398ebe50c07eb2f9d&playerContainerId=ooyala_live_tv_container_us&playerId=ooyala_live_tv_us&autoplay=1@width@@height@&callback=bloombergPlayerCallBackInternal&thruParam_conviva-other[customerId]=c3.Bloomberg&thruParam_conviva-other[serviceUrl]=http%3A%2F%2Flivepass.conviva.com&thruParam_conviva-other[otherTags]=Source|BBweb;Zone|tv;cPlay|@cPlayTkn@&thruParam_bloomberg-ui[endScreenType]=countdown&thruParam_bloomberg-ui[countdown]=5&embedCode=" + live_embed_code +  '&thruParam_vast-live-ads-manager[pre-roll]=' + bgadurl + BLOOMBERG.global_var.random_num + "";
+                    var csc_val = BLOOMBERG.util.Cookie.get('comScore');
+                    if(csc_val.indexOf('countdownComplete') != -1){
+                        ooyala_bg_script = ooyala_bg_script.replace('@cPlayTkn@', 'yes');
+                    }else{
+                        ooyala_bg_script = ooyala_bg_script.replace('@cPlayTkn@', 'no');
+                    }
+                    if(window.location.hash==="#playlist"){
+                        ooyala_bg_script = ooyala_bg_script.replace('@width@', '&width=860').replace('@height@', '&height=484');
+                    } else{
+                        ooyala_bg_script = ooyala_bg_script.replace('@width@', '&width=640').replace('@height@', '&height=360');
+                    }
+                    // default is to not lazy load
+                    var ooyala_lazy_load = false;
+                    if (BLOOMBERG.lead_video.is_iphone_ipad_user()) ooyala_lazy_load = false;
+                    if (!ooyala_lazy_load) document.write('<scr' + 'ipt src="' + ooyala_bg_script + '"></scr' + 'ipt>');
+                          //]]>
+                  </script>
+                  <noscript><p>You need to enable Javascript to play media on Bloomberg.com</p></noscript>
+              </div>
+            </div>
+        </td>
+        <td>
+            <div class="headbar">FED RESERVE</div>
+            <iframe width="380" height="180" src="http://www.ustream.tv/embed/4944768?v=3&amp;wmode=direct" scrolling="no" frameborder="0" style="border: 0px none transparent;">    </iframe>
+<br /><a href="http://www.ustream.tv/" style="padding: 2px 0px 4px; width: 400px; background: #ffffff; display: block; color: #000000; font-weight: normal; font-size: 10px; text-decoration: underline; text-align: center;" target="_blank">Stream videos at Ustream</a>
+            <div class="headbar">WSJ</div>            
+            <iframe width="380" height="180" src="http://www.ustream.tv/embed/4717475?v=3&amp;wmode=direct" scrolling="no" frameborder="0" style="border: 0px none transparent;">    </iframe>
+<br /><a href="http://www.ustream.tv/" style="padding: 2px 0px 4px; width: 400px; background: #ffffff; display: block; color: #000000; font-weight: normal; font-size: 10px; text-decoration: underline; text-align: center;" target="_blank">Video streaming by Ustream</a>        
+            <div class="headbar">BLOOMBERG</div>  
+            <iframe width="380" height="180" src="http://www.ustream.tv/embed/9599710?v=3&amp;wmode=direct" scrolling="no" frameborder="0" style="border: 0px none transparent;">    </iframe>
+<br /><a href="http://www.ustream.tv/" style="padding: 2px 0px 4px; width: 400px; background: #ffffff; display: block; color: #000000; font-weight: normal; font-size: 10px; text-decoration: underline; text-align: center;" target="_blank">Video streaming by Ustream</a>        
+            <div class="headbar">REUTERS</div>
+            <iframe width="380" height="180" src="http://www.ustream.tv/embed/12811863?v=3&amp;wmode=direct" scrolling="no" frameborder="0" style="border: 0px none transparent;">    </iframe>
+<br /><a href="http://www.ustream.tv/" style="padding: 2px 0px 4px; width: 400px; background: #ffffff; display: block; color: #000000; font-weight: normal; font-size: 10px; text-decoration: underline; text-align: center;" target="_blank">Video streaming by Ustream</a>
+        </td>
+        </tr>
+    </div>
+</body>
+</html>
+
+

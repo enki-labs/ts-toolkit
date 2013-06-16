@@ -1,0 +1,168 @@
+<% include header %>
+<% include mainnav %>
+
+<div id="task-edit" class="modal container hide fade" tabindex="-1">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h3>Edit</h3>
+    </div>
+    <div class="modal-body">
+        <table><tr><td>
+            <form id="task-edit-form">
+                    <div class="input-prepend">
+	                    <span class="add-on">Name</span>
+	                    <input type="text" value="" name="name" class="span4">
+                    </div>
+                    <div class="input-prepend">
+	                    <span class="add-on">Search Tags</span>
+	                    <input type="text" value="" name="searchTags" class="span4">
+                    </div>
+                    <div class="input-prepend">
+	                    <span class="add-on">Add Tags</span>
+	                    <input type="text" value="" name="addTags" class="span4">
+                    </div>
+                    <div class="input-prepend">
+	                    <span class="add-on">Remove Tags</span>
+	                    <input type="text" value="" name="removeTags" class="span4">
+                    </div>
+            </td>
+            <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+            <td>
+                    <div class="input-prepend">
+	                    <span class="add-on">Detail</span>
+	                    <textarea rows="12" class="field span7" name="detail"></textarea>
+                    </div>
+                    <input type="hidden" value="" name="_id">                
+            </form>
+            <button class="btn btn-primary" id="task-edit-save">Save</button>
+            <button class="btn btn-warning" id="task-edit-clone">Clone</button>
+            <button class="btn btn-primary" id="task-edit-reset">Cancel</button>
+            <button class="btn btn-warning" id="task-edit-delete">Delete</button>
+            </td></tr>
+        </table>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row-fluid">
+        <div class="span12">
+            <div class="grid-header" style="width:100%">
+                <!--<a id="export-csv" class="btn btn-primary btn-mini pull-right"><i class="icon-download icon-white"></i> Export CSV</a>-->
+                <a id="task-add" class="btn btn-primary btn-mini pull-right"><i class="icon-plus icon-white"></i> Add</a>
+                <h3>Tasks</h3>
+            </div>
+            <div id="task" style="width:100%; height:600px;"></div>
+        </div>
+    </div>
+</div> <!-- /container -->
+
+<% include scripts %>
+
+<script>
+
+    var grid;
+
+    var columns = [
+        {id: "name", name: "Name", field: "name", width: 150, sortable: true},
+        {id: "searchTags", name: "Search Tags", field: "searchTags", width: 250, sortable: false},
+        {id: "addTags", name: "Add Tags", field: "addTags", width: 250, sortable: false},
+        {id: "removeTags", name: "Remove Tags", field: "removeTags", width: 250, sortable: false}//,
+        //{id: "actions", name: "Actions", field: "actions", width: 200, formatter: actionFormatter}
+    ];
+    
+    function actionFormatter (row, cell, value, columnDef, dataContext)
+    {
+        var buttons = "<a class='btn btn-primary btn-mini' id='" + dataContext.id + "'><i class='icon-plus icon-white'></i> Clone</a>";
+        
+        return buttons;
+    }
+
+    var tableOptions = {
+        rowHeight: 24,
+        editable: true,
+        enableAddRow: false,
+        enableCellNavigation: true,
+        enableColumnReorder: true
+    };
+
+    $.task_edit_load = function (data)
+    {
+        $(':input[name="name"]').val(data.name);
+        $(':input[name="searchTags"]').val(data.searchTags.join(","));
+        $(':input[name="addTags"]').val(data.addTags.join(","));
+        $(':input[name="removeTags"]').val(data.removeTags.join(","));
+        var regexBackslash = new RegExp("\\\\\\\\", "g");
+        $(':input[name="detail"]').val(JSON.stringify(data.detail).replace(regexBackslash, "\\"));
+        $(':input[name="_id"]').val(data._id);
+        $('#task-edit').modal();
+    };
+
+    $.task_edit_reset = function ()
+    {
+        $.task_edit_load({name:'', searchTags:[], addTags:[], removeTags:[], detail:'', _id:''});
+        $('#task-edit').modal('hide');
+    };
+
+    $.task_edit_tojson = function ()
+    {
+        data = {};
+        data.name = $(':input[name="name"]').val();
+        data.searchTags = $(':input[name="searchTags"]').val().length > 0 ? $(':input[name="searchTags"]').val().split(',') : [];
+        data.addTags = $(':input[name="addTags"]').val().length > 0 ? $(':input[name="addTags"]').val().split(',') : [];
+        data.removeTags = $(':input[name="removeTags"]').val().length > 0 ? $(':input[name="removeTags"]').val().split(',') : [];
+        var regexBackslash = new RegExp("\\\\", "g");
+        data.detail = $(':input[name="detail"]').val().length > 0 ? JSON.parse($(':input[name="detail"]').val().replace(regexBackslash, "\\\\")) : {};
+        data._id = $(':input[name="_id"]').val();
+        return data;
+    };
+
+    function save (data, callback)
+    {
+	    $.post("/task/save", {content: JSON.stringify(data)}).done( function(response) {
+            find({}, {}, callback);
+	    });
+    };
+
+    function find (query, limit, callback)
+    {
+        var queryData = { find: query, limit: limit };
+        $.post("/task/find", {content: JSON.stringify(queryData)}).done( function(data) {
+            grid = new Slick.Grid("#task", JSON.parse(data), columns, tableOptions);
+	        grid.setSelectionModel(new Slick.RowSelectionModel());
+	        grid.onSelectedRowsChanged.subscribe(function(e, args) { $.task_edit_load(grid.getData()[args.rows[0]]); });
+            callback();
+	    });
+    };
+
+    $(function() {
+
+        $("#task-add").click(function() {
+            //$.task_edit_reset();
+            $('#task-edit').modal();
+        });
+        
+        $("#task-edit-clone").click(function() {
+            var jsonData = $.task_edit_tojson();
+            jsonData._id = "";
+            save(jsonData, function () {
+                $.task_edit_reset();
+            });
+        });
+
+        $("#task-edit-reset").click(function() {
+            $.task_edit_reset();
+        });
+
+        $("#task-edit-save").click(function() {
+            save($.task_edit_tojson(), function () {
+                $.task_edit_reset();
+            });
+        });
+
+        find({}, {}, function() {});
+    });
+    
+</script>
+
+<% include footer %>
+
