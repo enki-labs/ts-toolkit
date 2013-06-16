@@ -7,6 +7,8 @@ import pytz
 import bunch
 import tickMapper
 import tickProcessor
+import ohlcMapper
+import ohlcProcessor
 import re
 import time
 import sys
@@ -90,26 +92,35 @@ class StepFilter (object):
 jsoninput = sys.argv[1]
 args = json.loads(jsoninput)
 
-inPath = os.path.join("/media/wayne240/tstoolbox/reuters_original/", args["input"])
-outPath = os.path.join("/media/wayne240/tstoolbox/hdf_new/", (args["output"] + ".h5"))
+inPath = os.path.join("/media/wayne240/tstoolbox/reuters_original/", args["parentData"]["file"])
+outPath = os.path.join("/media/wayne240/tstoolbox/hdf_new/", (args["child"]["key"] + ".h5"))
 
-with openFile(str(outPath), mode = "w", title = args["name"]) as h5file:
-    mapper = tickMapper.TickMapper()
-    processor = tickProcessor.TickProcessor(mapper)
+with openFile(str(outPath), mode = "w", title = ",".join(args["child"]["tag"])) as h5file:
+
+    mapper = None
+    processor = None
+
+    if args["parentData"]["type"] == "futureTimeAndSales":
+        mapper = tickMapper.TickMapper()
+        processor = tickProcessor.TickProcessor(mapper)
+    elif args["parentData"]["type"] == "ohlc":
+        mapper = ohlcMapper.OhlcMapper()
+        processor = ohlcProcessor.OhlcProcessor(mapper)
+    
     stats = bunch.Bunch(lines=0, qualifierFiltered=0, priceFiltered=0, badTradeCount=0, tradeNoVolCount=0, tradeCount=0, totalTrades=0, timeFiltered=0)
     filters = Filters(complevel = 9, complib = "blosc", fletcher32 = False)
     appender = OHLC(h5file, filters)
 
     remove = []
-    for f in args["remove"]:
+    for f in args["childData"]["remove"]:
         remove.append(re.compile(f))
 
     allow = []
-    for a in args["allow"]:
+    for a in args["childData"]["allow"]:
         allow.append(re.compile(a))
 
     filter = []
-    for f in args["filter"]:
+    for f in args["childData"]["filter"]:
         filterParts = f.split(",")
         if filterParts[0] == "step":
             filter.append(StepFilter(int(filterParts[1]), float(filterParts[2]), int(filterParts[3])))
@@ -118,12 +129,20 @@ with openFile(str(outPath), mode = "w", title = args["name"]) as h5file:
         elif filterParts[0] == "cap":
             filter.append(CapFilter(float(filterParts[1])))
 
-    holdForVolume = bool(args["volFollows"])
-    copyLastPrice = bool(args["copyLast"])
-    priceShift = float(args["priceShift"])
-    tradeVolumeLimit = float(args["volumeLimit"])
-    validFrom = datetime.datetime.fromtimestamp(long(args["validFrom"]), pytz.utc) if args["validFrom"] else None
-    validTo = datetime.datetime.fromtimestamp(long(args["validTo"]), pytz.utc) if args["validTo"] else None
+    holdForVolume = bool(args["childData"]["volFollows"])
+    copyLastPrice = bool(args["childData"]["copyLast"])
+    priceShift = float(args["childData"]["priceShift"])
+    tradeVolumeLimit = float(args["childData"]["maxTrade"])
+
+    validFrom = None
+    if len(args["childData"]["validFrom"]) > 0:
+        validFrom = datetime.datetime.strptime(args["childData"]["validFrom"], "%Y-%m-%d")
+    validTo = None
+    if len(args["childData"]["validTo"]) > 0:
+        validTo = datetime.datetime.strptime(args["childData"]["validTo"], "%Y-%m-%d")
+    
+    #validFrom = datetime.datetime.fromtimestamp(long(args["validFrom"]), pytz.utc) if args["validFrom"] else None
+    #validTo = datetime.datetime.fromtimestamp(long(args["validTo"]), pytz.utc) if args["validTo"] else None
 
     with gzip.open(str(inPath), 'rb') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='|')
