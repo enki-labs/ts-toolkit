@@ -31,7 +31,8 @@ class DataServiceIndex (Resource):
 
     def __init__ (self, rootpath):
         self._rootpath = rootpath
-        super(DataServiceIndex, self).__init__()
+        #super(DataServiceIndex, self).__init__()
+        Resource.__init__(self)
 
     def render_GET (self, request):
 
@@ -64,17 +65,22 @@ class DataServiceIndex (Resource):
             elif fromIndex == 0:
                 sample = data
 
-            outData = []
+            ohlcData = []
+            volData = []
+            openinterestData = []
             for r in data:
-                outRow = [float(r['time']/1000), float(r['open']), float(r['high']), float(r['low']), float(r['close']), float(r['volume'])]
-                outData.append(outRow)
+                t = float(r['time']/1000)
+                outRow = [t, float(r['open']), float(r['high']), float(r['low']), float(r['close']), float(r['volume'])]
+                volData.append([t, float(r['volume'])])
+                openinterestData.append([t, float(r['openInterest'])])
+                ohlcData.append(outRow)
                 
             outSample = []
             for r in sample:
                 outRow = [float(r['time']/1000), float(r['open']), float(r['high']), float(r['low']), float(r['close']), float(r['volume'])]
                 outSample.append(outRow)
 
-            returnData = json.dumps({'from': long(fromIndex), 'to': long(toIndex), 'summary': outSample, 'detail': outData, 'max': long((rows - 1))})
+            returnData = json.dumps({'from': long(fromIndex), 'to': long(toIndex), 'summary': outSample, 'ohlc': ohlcData, 'volume': volData, 'openinterest': openinterestData, 'max': long((rows - 1))})
 
         return returnData
 

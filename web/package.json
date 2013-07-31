@@ -1,6 +1,6 @@
 {
     "name" : "ts-toolkit",
-    "version" : "2013.06.16",
+    "version" : "1.0.0",
     "private" : true,
     "dependencies" : {
         "argparse" : "*",
@@ -8,7 +8,6 @@
         "mongodb" : "*",
         "json2csv" : "*",
         "request" : "*",
-        "ejs" : "*",
-        "git://github.com/enki-labs/zoot.git" : "*"
+        "ejs" : "*"
     }
 }
