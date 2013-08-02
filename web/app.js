@@ -114,16 +114,16 @@ new mongodb.Db('qu', server, {safe:true}).open(function (error, persist) {
     //Z.prototype.addTask = function (taskData, searchTags, addTags, removeTags, markDirty, callback)
     //zclient.getTask(["abc"], function (r) { console.log(r); });
 
-    app.get('/task', verifyAuth, task(taskDb, zClient).index);
+    app.get('/task', verifyAuth, task(taskDb, logDb, nodeDb, zClient).index);
     app.get('/explorer', verifyAuth, explorer(taskDb, zClient).index);
-    app.post('/task/find', verifyAuth, task(taskDb, logDb, zClient).find);
-    app.post('/task/detail', verifyAuth, task(taskDb, logDb, zClient).detail);
-    app.post('/task/save', verifyAuth, task(taskDb, logDb, zClient).save);
-    app.post('/task/delete', verifyAuth, task(taskDb, logDb, zClient).delete);
-    app.get('/task/queue', verifyAuth, task(taskDb, logDb, zClient).queue);
-    app.post('/task/submit', verifyAuth, task(taskDb, logDb, zClient).submit);
-    app.post('/task/define', verifyAuth, task(taskDb, logDb, zClient).define);
-    app.get('/task/define', verifyAuth, task(taskDb, logDb, zClient).define);
+    app.post('/task/find', verifyAuth, task(taskDb, logDb, nodeDb, zClient).find);
+    app.post('/task/detail', verifyAuth, task(taskDb, logDb, nodeDb, zClient).detail);
+    app.post('/task/save', verifyAuth, task(taskDb, logDb, nodeDb, zClient).save);
+    app.post('/task/delete', verifyAuth, task(taskDb, logDb, nodeDb, zClient).delete);
+    app.get('/task/queue', verifyAuth, task(taskDb, logDb, nodeDb, zClient).queue);
+    app.post('/task/submit', verifyAuth, task(taskDb, logDb, nodeDb, zClient).submit);
+    app.post('/task/define', verifyAuth, task(taskDb, logDb, nodeDb, zClient).define);
+    app.get('/task/define', verifyAuth, task(taskDb, logDb, nodeDb, zClient).define);
     app.get('/status', verifyAuth, status(logDb, zClient).index);
     app.post('/status/find', verifyAuth, status(logDb, zClient).find);
     

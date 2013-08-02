@@ -53,6 +53,53 @@ Z.prototype.findTasks = function (searchTags, callback)
     });
 };
 
+Z.prototype._markChildrenDirty = function (children, callback)
+{
+    console.log("_markChildrenDirty");
+    var self = this;
+
+    self.db.find( {'_id': { $in : children }}, {}).toArray( 
+        function(err, nodes)
+        {
+            console.log("async.eachSeries");
+
+            if (nodes.length == 0)
+            {
+                console.log("EXIT _markChildrenDirty"); callback(); return;
+            }
+
+            async.eachSeries(nodes, 
+                function (node, next) 
+                {
+                    console.log(node._id);
+                    self.db.update({_id: node._id}, {$set: { dirty: true }}, {safe:true}, 
+                        function (err) 
+                        {
+                            console.log("updated");
+                            if (err) next(err);
+
+                            if (node.child.length > 0)
+                            {
+                                console.log("children " + node.child.length);
+                                self._markChildrenDirty(node.child, next);
+                            }
+                            else
+                            {
+                                console.log("no children");
+                                next();
+                            }
+                        }
+                    );
+                },
+                function (err) {
+                    console.log("LEAVE _markChildrenDirty");
+                    callback(err);
+                }
+            );
+        }
+    );
+};
+
 Z.prototype.getTask = function (searchTags, callback)
 {
     console.log("GET TASK");
@@ -70,7 +117,7 @@ Z.prototype.getTask = function (searchTags, callback)
         console.log("CHECK NODES");
         async.eachSeries(nodes, function (node, next) {
 
-                console.log(node.dirty); console.log(node.status);
+                //console.log(node.dirty); console.log(node.status);
                 if (node.dirty && node.status == "")
                 {
                     console.log(node.parent);
@@ -118,7 +165,7 @@ Z.prototype.getTask = function (searchTags, callback)
                 }
                 else
                 {
-                    console.log("next()");
+                    //console.log("next()");
                     next();
                 }
             },
@@ -152,7 +199,9 @@ Z.prototype.addTask = function (taskData, searchTags, addTags, removeTags, markD
                         node.data = taskData;
                         node.dirty = markDirty;
                         self.db.update({_id: node._id}, node, {upsert:true, safe:true}, function(err) {
-                            next(err);
+                            if (err) next(err);
+                            else if (markDirty && node.child.length > 0) { self._markChildrenDirty(node.child, next); }
+                            else next();
                         });
                     },
                     function (err) {
@@ -205,6 +254,7 @@ Z.prototype.addTask = function (taskData, searchTags, addTags, removeTags, markD
                                         {                                            
                                             console.log(newTagsString);
                                             var childNode = childNodes[0];
+                                            console.log(childNode);
                                             if (newTagsString === childNode.tags.join(","))
                                             {
                                                 childTags[newTagsString] = 0;
@@ -213,7 +263,9 @@ Z.prototype.addTask = function (taskData, searchTags, addTags, removeTags, markD
                                                 console.log("DUDOIUDIOUIODUIJDKJD");
                                                 self.db.update({_id: childNode._id}, childNode, {upsert:true, safe:true}, function(err) {
                                                     console.log(err); console.log("si929929292");
-                                                    nextChild();
+                                                    //nextChild();
+                                                    if (markDirty && childNode.child.length > 0) { self._markChildrenDirty(childNode.child, nextChild); }
+                                                    else nextChild();
                                                     //done();
                                                     //return;
                                                 });

@@ -4,9 +4,10 @@ var ObjectID = require('mongodb').ObjectID;
 var url = require('url');
 var fs = require('fs');
 var microtime = require('microtime');
+var request = require('request');
 
 
-module.exports = function (persist, logDb, zootClient) {
+module.exports = function (persist, logDb, nodeDb, zootClient) {
 
     return {
 
@@ -38,7 +39,8 @@ module.exports = function (persist, logDb, zootClient) {
             fs.readFile(req.files.file.path, function (err, data) {
                 var newPath = "/root/data/" + req.files.file.name;
                 fs.writeFile(newPath, data, function (err) {
-                    res.send("");
+                    if (err) { console.log(err); }
+                    res.send("failed here");
                 });
             });
         },
@@ -180,7 +182,8 @@ module.exports = function (persist, logDb, zootClient) {
 
                     console.log("...releasing");
                     //zootClient.releaseTask(JSON.parse(options.task), (options.status == "complete"), _ret(res));
-                    zootClient.updateTask(options.id, "", (options.status == "complete"), _ret(res));
+                    var status = (options.status == "complete") ? "" : options.status;
+                    zootClient.updateTask(options.id, "", status, _ret(res));
                 });
             }
             else if (options.action == "create")
