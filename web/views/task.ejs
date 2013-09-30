@@ -1,43 +1,48 @@
 <% include header %>
 <% include mainnav %>
 
-<div id="task-edit" class="modal container hide fade" tabindex="-1">
+<div id="task-edit" class="reveal-modal massive"> <!-- class="modal container hide fade" tabindex="-1"> -->
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
         <h3>Edit</h3>
     </div>
     <div class="modal-body">
-        <table><tr><td>
+        <table><tr><td valign="top">
             <form id="task-edit-form">
                     <div class="input-prepend">
 	                    <span class="add-on">Name</span>
-	                    <input type="text" value="" name="name" class="span4">
+	                    <input type="text" value="" name="name" class="span3">
                     </div>
                     <div class="input-prepend">
 	                    <span class="add-on">Search Tags</span>
-	                    <input type="text" value="" name="searchTags" class="span4">
+	                    <input type="text" value="" name="searchTags" class="span3">
                     </div>
                     <div class="input-prepend">
 	                    <span class="add-on">Add Tags</span>
-	                    <input type="text" value="" name="addTags" class="span4">
+	                    <input type="text" value="" name="addTags" class="span3">
                     </div>
                     <div class="input-prepend">
 	                    <span class="add-on">Remove Tags</span>
-	                    <input type="text" value="" name="removeTags" class="span4">
+	                    <input type="text" value="" name="removeTags" class="span3">
                     </div>
+                    
+                    <br /><br />
+                    
+                    <button class="btn btn-primary" id="task-edit-save">Save</button>
+                    <button class="btn btn-warning" id="task-edit-clone">Clone</button>
+                    <button class="btn btn-primary" id="task-edit-reset">Cancel</button>
+                    <button class="btn btn-warning" id="task-edit-delete">Delete</button>
+                    <input type="hidden" value="" name="_id">
             </td>
             <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-            <td>
-                    <div class="input-prepend">
-	                    <span class="add-on">Detail</span>
-	                    <textarea rows="12" class="field span7" name="detail"></textarea>
-                    </div>
-                    <input type="hidden" value="" name="_id">                
+            <td valign="top" style="height:700px; min-height:700px;">
+                    <select id="task-edit-language">
+                        <option>javascript</option>
+                        <option>python</option>
+                    </select>
+                    <span class="help-inline">Language</span>
+                    <textarea rows="180" class="field" name="detail" style="height:100%;"></textarea>                                    
             </form>
-            <button class="btn btn-primary" id="task-edit-save">Save</button>
-            <button class="btn btn-warning" id="task-edit-clone">Clone</button>
-            <button class="btn btn-primary" id="task-edit-reset">Cancel</button>
-            <button class="btn btn-warning" id="task-edit-delete">Delete</button>
             </td></tr>
         </table>
     </div>
@@ -51,14 +56,64 @@
                 <a id="task-add" class="btn btn-primary btn-mini pull-right"><i class="icon-plus icon-white"></i> Add</a>
                 <h3>Tasks</h3>
             </div>
-            <div id="task" style="width:100%; height:600px;"></div>
+            <div id="task" style="width:100%; height:500px;"></div>
+
+            <br />
+
+            <div class="grid-header" style="width:100%">
+                <a id="definition-add" class="btn btn-primary btn-mini pull-right"><i class="icon-plus icon-white"></i> Add</a>
+                <h3>Definitions</h3>
+            </div>
+            <div id="definitions" style="width:100%; height:200px;"></div>
+            <form name="definition-form" id="definition-form" action="/task/define?action=save" enctype="multipart/form-data" method="post" style="opacity: 0;">
+                <input type="file" name="file" id="file" />
+                <input type="submit" name="submit-definition" id="submit-definition" value="Submit" />
+            </form>
         </div>
     </div>
 </div> <!-- /container -->
 
 <% include scripts %>
+<script src="/js/codemirror.js"></script>
+<link rel="stylesheet" href="/js/codemirror.css">
+<script src="/js/codemirror-mode-javascript.js"></script>
+<script src="/js/codemirror-mode-python.js"></script>
 
 <script>
+
+    function createButtons (row, cell, value, columnDef, dataContext)
+    {
+        return '<a class="btn btn-mini" href="#"><i class="icon-folder-open"></i> Replace</a>';
+    }
+    var definitionGrid;
+    var definitionColumns = [
+                                {id: "name", name: "Name", field: "name", width: 250, sortable: true},
+                                {id: "link", name: "", field: "link", width: 350, sortable: false, 
+                                    formatter: linkFormatter = function (row,cell,value,columnDef,dataContext) {
+                                        return '<a href="/task/define?action=get&file=' + dataContext["name"] + '">' + dataContext["name"] + '</a>';
+                                    }},
+                                {id: "edit", field: "edit", name: "Edit", width:150, formatter: createButtons}
+                            ];
+    var definitionTable = { rowHeight: 24, editable: true, enableAddRow: true };
+    function definitionRefresh ()
+    {
+        $.post("/task/define?action=list", {}).done( function(data) {
+            var parsedData = [];
+            jQuery.each(JSON.parse(data), function (index, item) {
+                parsedData.push({name: item});
+            });
+            definitionGrid = new Slick.Grid("#definitions", parsedData, definitionColumns, definitionTable);
+	        definitionGrid.setSelectionModel(new Slick.RowSelectionModel());
+            //onSelectedRowsChanged
+	        //definitionGrid.onClick.subscribe(function(e, args) { 
+            //    $.task_edit_load(grid.getData()[args.row]); //$('#task-edit').modal('show');
+            //    $('#task-edit').reveal();
+            //});
+            //callback();
+	    });
+    };
+
+
 
     var grid;
 
@@ -92,15 +147,43 @@
         $(':input[name="addTags"]').val(data.addTags.join(","));
         $(':input[name="removeTags"]').val(data.removeTags.join(","));
         var regexBackslash = new RegExp("\\\\\\\\", "g");
-        $(':input[name="detail"]').val(JSON.stringify(data.detail).replace(regexBackslash, "\\"));
+        //$(':input[name="detail"]').val(JSON.stringify(data.detail).replace(regexBackslash, "\\"));
         $(':input[name="_id"]').val(data._id);
-        $('#task-edit').modal();
+
+        var editWindow = $("#task-edit-form").data("detail-editor");
+
+        if (!editWindow)
+        {
+            var config = {
+                            size: { height: 900},
+                            lineNumbers: true,
+                            lineWrapping: true,
+                            tabMode: "indent",
+                            matchBrackets: true,
+                            indentUnit: 4,
+                            extraKeys: {
+                                "Tab": function() {
+                                        editor.replaceSelection("    ");
+                                        editor.setCursor(editor.getCursor());
+                                      }
+                            }
+                        };
+            editWindow = CodeMirror.fromTextArea($(':input[name="detail"]')[0], config);
+            jQuery.data($("#task-edit-form")[0], "detail-editor", editWindow);                                                
+        }
+
+        editWindow.setValue(data.detail.code);
+        $("#task-edit-language").val(data.detail.language);
+        setTimeout(function () { 
+            editWindow.refresh(); editWindow.scrollTo(0, 0);
+            editWindow.setOption("mode", $("#task-edit-language option:selected").text());
+        }, 700); //force refresh to show
     };
 
     $.task_edit_reset = function ()
     {
-        $.task_edit_load({name:'', searchTags:[], addTags:[], removeTags:[], detail:'', _id:''});
-        $('#task-edit').modal('hide');
+        $.task_edit_load({name:'', searchTags:[], addTags:[], removeTags:[], detail: { language: 'javascript', code: '' }, _id:''});
+        $('#task-edit').trigger('reveal:close');
     };
 
     $.task_edit_tojson = function ()
@@ -110,8 +193,12 @@
         data.searchTags = $(':input[name="searchTags"]').val().length > 0 ? $(':input[name="searchTags"]').val().split(',') : [];
         data.addTags = $(':input[name="addTags"]').val().length > 0 ? $(':input[name="addTags"]').val().split(',') : [];
         data.removeTags = $(':input[name="removeTags"]').val().length > 0 ? $(':input[name="removeTags"]').val().split(',') : [];
+
         var regexBackslash = new RegExp("\\\\", "g");
-        data.detail = $(':input[name="detail"]').val().length > 0 ? JSON.parse($(':input[name="detail"]').val().replace(regexBackslash, "\\\\")) : {};
+        //data.detail = $(':input[name="detail"]').val().length > 0 ? JSON.parse($(':input[name="detail"]').val().replace(regexBackslash, "\\\\")) : {};
+        var editWindow = $("#task-edit-form").data("detail-editor");
+        data.detail = { language: $("#task-edit-language option:selected").text(), code: editWindow.getValue() };
+
         data._id = $(':input[name="_id"]').val();
         return data;
     };
@@ -123,13 +210,24 @@
 	    });
     };
 
+    function del (data, callback)
+    {
+	    $.post("/task/delete", {content: JSON.stringify(data)}).done( function(response) {
+            find({}, {}, callback);
+	    });
+    };
+
     function find (query, limit, callback)
     {
         var queryData = { find: query, limit: limit };
         $.post("/task/find", {content: JSON.stringify(queryData)}).done( function(data) {
             grid = new Slick.Grid("#task", JSON.parse(data), columns, tableOptions);
 	        grid.setSelectionModel(new Slick.RowSelectionModel());
-	        grid.onSelectedRowsChanged.subscribe(function(e, args) { $.task_edit_load(grid.getData()[args.rows[0]]); });
+            //onSelectedRowsChanged
+	        grid.onClick.subscribe(function(e, args) { 
+                $.task_edit_load(grid.getData()[args.row]); //$('#task-edit').modal('show');
+                $('#task-edit').reveal();
+            });
             callback();
 	    });
     };
@@ -137,8 +235,12 @@
     $(function() {
 
         $("#task-add").click(function() {
-            //$.task_edit_reset();
-            $('#task-edit').modal();
+            $.task_edit_reset();
+            $('#task-edit').reveal();
+        });
+
+        $("#definition-add").click(function() {
+            $("#file").click();
         });
         
         $("#task-edit-clone").click(function() {
@@ -159,7 +261,26 @@
             });
         });
 
+        $("#task-edit-delete").click(function() {
+            del($.task_edit_tojson(), function () {
+                $.task_edit_reset();
+            });
+        });
+
+        $('#task-edit-language').change(function() {
+            var editWindow = $("#task-edit-form").data("detail-editor");
+            if (editWindow)
+            {
+                editWindow.setOption("mode", $("#task-edit-language option:selected").text());
+            }
+        });
+
+        $('#file').change(function() {
+            $("#submit-definition").click();
+        });
+
         find({}, {}, function() {});
+        definitionRefresh();
     });
     
 </script>

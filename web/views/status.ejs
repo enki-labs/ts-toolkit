@@ -1,0 +1,57 @@
+<% include header %>
+<% include mainnav %>
+
+<div class="container">
+    <div class="row-fluid">
+        <div class="span12">
+            <div class="grid-header" style="width:100%">
+                <h3>Log</h3>
+            </div>
+            <div id="log" style="width:100%; height:600px;"></div>
+        </div>
+    </div>
+</div> <!-- /container -->
+
+<% include scripts %>
+
+<script>
+
+    var grid;
+
+    var columns = [
+        {id: "Task", field: "task", width: 250, sortable: false},
+        {id: "Time", name: "index", field: "index", width: 120, sortable: false},
+        {id: "Status", name: "status", field: "status", width: 120, sortable: false},
+        {id: "Output", name: "output", field: "output", width: 900, sortable: false}
+    ];
+
+    var tableOptions = {
+        rowHeight: 24,
+        editable: true,
+        enableAddRow: false,
+        enableCellNavigation: true,
+        enableColumnReorder: true
+    };
+
+    function find (query, options, callback)
+    {
+        var queryData = { find: query, fields: {}, options: options };
+        $.post("/status/find", {content: JSON.stringify(queryData)}).done( function(data) {
+            grid = new Slick.Grid("#log", JSON.parse(data), columns, tableOptions);
+	        grid.setSelectionModel(new Slick.RowSelectionModel());
+            //grid.onClick.subscribe(function(e, args) { 
+            //    $.task_edit_load(grid.getData()[args.row]); $('#task-edit').modal('show'); 
+            //});
+            callback();
+	    });
+    };
+
+    $(function() {
+
+        find({}, { sort: { index: -1, limit: 100 } }, function() {});
+    });
+    
+</script>
+
+<% include footer %>
+

@@ -46,6 +46,8 @@ var mongodb = require('mongodb');
 var ObjectID = require('mongodb').ObjectID;
 var task = require('./task');
 var explorer = require('./explorer');
+var status = require('./status');
+var z = require('./z');
 var redisHost = args.zData;
 var redisPort = 6379;
 var zootClient = new Zoot(args.zgraph, args.zdata, args.zdataport, function () {});
@@ -92,12 +94,38 @@ new mongodb.Db('qu', server, {safe:true}).open(function (error, persist) {
     });
 
     var taskDb = new mongodb.Collection(persist, 'task');
-    app.get('/task', verifyAuth, task(taskDb, zootClient).index);
-    app.get('/explorer', verifyAuth, explorer(taskDb, zootClient).index);
-    app.post('/task/find', verifyAuth, task(taskDb, zootClient).find);
-    app.post('/task/detail', verifyAuth, task(taskDb, zootClient).detail);
-    app.post('/task/save', verifyAuth, task(taskDb, zootClient).save);
-    app.post('/task/delete', verifyAuth, task(taskDb, zootClient).delete);
+    var logDb = new mongodb.Collection(persist, 'log');
+    var nodeDb = new mongodb.Collection(persist, 'node');
+
+    var zClient = new z(nodeDb);
+
+    //zclient.addTask({a:1, b:2}, [], ["aaa"], [], true, true, function (err) { console.log(err); });
+    //zclient.addTask({a:11, b:22}, ["aaa"], ["bb1"], [], true, true, function (err) { console.log(err); });
+    //zclient.addTask({a:22, b:33}, ["aaa"], ["bb2"], [], true, true, function (err) { console.log(err); });
+    //zclient.updateTask("51f3e40551ff5e3565000001", false, "", function (r) { console.log("updated"); console.log(r); });
+
+    //zclient.getTask(["aaa"], function (r) { 
+    //    console.log("----------------------------");
+    //    console.log(r); 
+    //    //zclient.updateTask("51f3e40551ff5e3565000001", false, "", function (r) { console.log("updated"); console.log(r); });
+    //});
+
+    //zclient.addTask({a:"MY GOD IT WORKED", b:2}, ["abc"], ["ghi"], ["abc"], false, true, function (err) { console.log(err); console.log("!!done!!"); });
+    //Z.prototype.addTask = function (taskData, searchTags, addTags, removeTags, markDirty, callback)
+    //zclient.getTask(["abc"], function (r) { console.log(r); });
+
+    app.get('/task', verifyAuth, task(taskDb, logDb, nodeDb, zClient).index);
+    app.get('/explorer', verifyAuth, explorer(taskDb, zClient).index);
+    app.post('/task/find', verifyAuth, task(taskDb, logDb, nodeDb, zClient).find);
+    app.post('/task/detail', verifyAuth, task(taskDb, logDb, nodeDb, zClient).detail);
+    app.post('/task/save', verifyAuth, task(taskDb, logDb, nodeDb, zClient).save);
+    app.post('/task/delete', verifyAuth, task(taskDb, logDb, nodeDb, zClient).delete);
+    app.get('/task/queue', verifyAuth, task(taskDb, logDb, nodeDb, zClient).queue);
+    app.post('/task/submit', verifyAuth, task(taskDb, logDb, nodeDb, zClient).submit);
+    app.post('/task/define', verifyAuth, task(taskDb, logDb, nodeDb, zClient).define);
+    app.get('/task/define', verifyAuth, task(taskDb, logDb, nodeDb, zClient).define);
+    app.get('/status', verifyAuth, status(logDb, zClient).index);
+    app.post('/status/find', verifyAuth, status(logDb, zClient).find);
     
     var request = require('request');
     app.get('/getdata', verifyAuth, function (req, res)
