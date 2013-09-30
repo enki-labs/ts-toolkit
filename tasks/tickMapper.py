@@ -16,7 +16,7 @@ class TickMapper(object):
         self._fldAccVolume = 10000                
 
     def mapAll (self, cols):
-        for index in range(0, len(cols)-1):
+        for index in range(0, len(cols)):
             self.map(cols[index], index)
 
     def map (self, token, index):
@@ -24,7 +24,6 @@ class TickMapper(object):
             self._fldDate = index
         elif token == "Time[G]":
             self._fldTime = index
-        #else if (token == "GMT Offset")
         elif token == "Type":
             self._fldType = index
         elif token == "Price":
@@ -35,11 +34,13 @@ class TickMapper(object):
             self._fldQualifiers = index
         elif token == "Acc. Volume":
             self._fldAccVolume = index
+        else:
+            print "Unknown token (%s) of type (%s)" % (token, type(token))
 
     def mapOk (self):
         return (self._fldDate != 10000 and self._fldTime != 10000 and self._fldType != 10000 and
             self._fldPrice != 10000 and self._fldVolume != 10000 and self._fldQualifiers != 10000 and
-            _fldAccVolume != 10000)
+            self._fldAccVolume != 10000)
     
     def load (self, cols):
         self._columns = cols        
